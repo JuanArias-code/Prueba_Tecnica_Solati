@@ -1,0 +1,16 @@
+# Forzar el reconocimiento de archivos PHP
+*.php linguist-language=PHP
+
+# Forzar el reconocimiento de archivos JavaScript
+*.js linguist-language=JavaScript
+
+# Forzar el reconocimiento de archivos Python
+*.py linguist-language=Python
+
+# Forzar el reconocimiento de archivos HTML
+*.html linguist-language=HTML
+
+# Forzar el reconocimiento de archivos CSS
+*.css linguist-language=CSS
+
+# Agrega más extensiones y lenguajes según sea necesario
