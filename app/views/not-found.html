@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="container">
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+      <!-- Contenido de la página de error 404 -->
+      <h1 class="display-4">Error 404</h1>
+      <p class="lead">Page not found</p>
+      <p class="mb-4">Sorry, the page you are looking for could not be found.</p>
+      <a href="{{url_for('usuarios.index')}}" class="btn btn-primary"
+        >Go to the club members page</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %}

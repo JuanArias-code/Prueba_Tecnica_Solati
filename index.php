@@ -1,71 +1,62 @@
 <?php
-require_once 'controllers/UserController.php';
-require_once 'config/config.php';
 
-$action = isset($_GET['action']) ? $_GET['action'] : 'home';
-$controller = new UserController();
+require __DIR__ . '/vendor/autoload.php';
 
-try {
-    switch ($action) {
-        case 'getUsers':
-            $controller->getUsers();
-            break;
-        case 'createUser':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                if (isset($data['contact_email'], $data['first_name'], $data['last_name'], $data['membership_type'], $data['password'])) {
-                    $controller->createUser($data['contact_email'], $data['first_name'], $data['last_name'], $data['membership_type'], $data['password']);
-                } else {
-                    header('Content-Type: application/json', true, 400);
-                    echo json_encode(['error' => 'Invalid input data']);
-                }
-            } else {
-                header('Content-Type: application/json', true, 405);
-                echo json_encode(['error' => 'Method Not Allowed']);
-            }
-            break;
-        case 'findOneUser':
-            if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-                $id = $_GET['id'];
-                $controller->getUserById($id);
-            } else {
-                header('Content-Type: application/json', true, 400);
-                echo json_encode(['error' => 'Valid ID is required']);
-            }
-            break;
-        case 'updateUser':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                if (isset($data['id'], $data['contact_email'], $data['first_name'], $data['last_name'], $data['membership_type'])) {
-                    $controller->updateUser($data['id'], $data['contact_email'], $data['first_name'], $data['last_name'], $data['membership_type'], isset($data['password']) ? $data['password'] : null);
-                } else {
-                    header('Content-Type: application/json', true, 400);
-                    echo json_encode(['error' => 'Invalid input data']);
-                }
-            } else {
-                header('Content-Type: application/json', true, 405);
-                echo json_encode(['error' => 'Method Not Allowed']);
-            }
-            break;
-        case 'deleteUser':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                if (isset($data['id']) && is_numeric($data['id'])) {
-                    $controller->deleteUser($data['id']);
-                } else {
-                    header('Content-Type: application/json', true, 400);
-                    echo json_encode(['error' => 'User ID is required']);
-                }
-            } else {
-                header('Content-Type: application/json', true, 405);
-                echo json_encode(['error' => 'Method Not Allowed']);
-            }
-            break;
-        default:
-            require 'views/form_api.php';
-            break;
-    }
-} catch (Exception $e) {
-    header('Content-Type: application/json', true, 500);
-    echo json_encode(['error' => 'Internal Server Error', 'message' => $e->getMessage()]);
-}
+use Dotenv\Dotenv;
+use App\Controllers\HomeController;
+use Slim\Factory\AppFactory;
+use App\Controllers\UserController;
+use App\MiddleWares\ContentTypeJson;
+use App\MiddleWares\CORS;
+use Slim\Views\Twig;
+use Slim\Views\TwigMiddleware;
+
+// Load environment variables from .env file
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+// Create App
+$app = AppFactory::create();
+
+// Create Twig (Template System)
+$twig = Twig::create('app/views', ['cache' => false]);
+
+// Add Twig-View Middleware
+$app->add(TwigMiddleware::create($app, $twig));
+
+// Parse json, form data and XML
+$app->addBodyParsingMiddleware();
+
+// CORS added for external requests
+$app->add(new CORS());
+
+// Group for API routes
+$app->group("/api", function ($app) {
+	// API routes
+	$app->get("/users", UserController::class . ":index");
+	$app->post("/users", UserController::class . ":store");
+	$app->get("/users/{id}", UserController::class . ":show");
+	$app->put("/users/{id}", UserController::class . ":update");
+	$app->delete("/users/{id}/delete", UserController::class . ":destroy");
+})->add(new ContentTypeJson());
+
+// Group for WEB routes
+$app->group("/usuarios", function ($app) {
+	// WEB routes
+	$app->get("", HomeController::class . ":index")->setName('usuarios.index');
+	$app->get("/{id}", HomeController::class . ":show")->setName('usuarios.show');
+});
+
+// Define Custom Error Handler, especially for 404 Not Found
+$customErrorHandler = function () use ($app, $twig) {
+	$response = $app->getResponseFactory()->createResponse();
+
+	return $twig->render($response, 'not-found.html');
+};
+
+// Define Custom Error Handler
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$errorMiddleware->setDefaultErrorHandler($customErrorHandler);
+
+// Run app
+$app->run();

@@ -1,0 +1,34 @@
+{% extends "layout.html" %} 
+
+{% block body %}
+<div class="container mt-4">
+  <h1 class="text-center mb-3">Member List</h1>
+  {% if users %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Name</th>
+          <th scope="col">Contact Mail</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <th scope="row">{{user.id}}</th>
+            <td>{{user.name}}</td>
+            <td>{{user.email}}</td>
+            <td>
+              <a href="{{ url_for('usuarios.show', {'id': user.id}) }}" class="btn btn-primary">Ver</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </ul>
+  {% else %}
+    Test Printf
+  {% endif %}
+</div>
+{% endblock %}
